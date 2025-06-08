@@ -16,6 +16,8 @@ and provide text tools to help writing poetry or lyrics.
 7. Do not use plenary or any other deprecated stuff. Think before or get
    an overview of the current best practices
 8. Use `vim.fn.systemlist()` for HTTP requests
+9. LSP integration: once core Functionality is done we can provide LSP
+   integration
 
 ### Use Cases
 

@@ -76,6 +76,8 @@ local function generate_message()
 		process_dir(dir)
 	end
 
+	process_file("README.md", "README.md", "file")
+	process_file("TODO.md", "TODO.md", "file")
 	process_file("DEV.md", "DEV.md", "file")
 	generate_repo_tree()
 end
