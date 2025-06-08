@@ -20,13 +20,241 @@ represents the project you are working on. The next message is an initial AI_UPD
 
 AI_UPDATE
 
-AI_UPDATE
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE doc/rhymes.txt
+
+" doc/rhymes.txt
+* rhymes.txt*    Plugin documentation for nvim-rhymes
+
+rhymes.txt      Rhyme finder and poem analyzer.
+
+USAGE:
+  :Rhymes find <word>
+  :Rhymes analyze
+
+CONFIGURATION:
+  call lua require('rhymes').setup({ enable_analysis = v:true })
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE doc/rhymes.txt
 
 AI_UPDATE
 
-AI_UPDATE
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/analysis.lua
+
+-- lua/rhymes/analysis.lua
+local M = {}
+
+--- Analyze poem structure: line count, stanza count (blank lines), naive rhyme scheme
+-- @param bufnr number
+-- @return table { lines=number, stanzas=number, rhyme_scheme=table }
+function M.analyze_poem(bufnr)
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local stanzas = 1
+	for _, ln in ipairs(lines) do
+		if ln == "" then
+			stanzas = stanzas + 1
+		end
+	end
+	local scheme = {}
+	for i, ln in ipairs(lines) do
+		scheme[i] = ln:sub(-3)
+	end
+	return { lines = #lines, stanzas = stanzas, rhyme_scheme = scheme }
+end
+
+return M
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/analysis.lua
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/commands.lua
+
+-- lua/rhymes/commands.lua
+local M = {}
+local picker = require("rhymes.picker")
+local analysis = require("rhymes.analysis")
+
+--- Entry point for :Rhymes
+-- @param action string: 'find' or 'analyze'
+-- @param ...    varargs
+function M.run(action, ...)
+	if action == "find" then
+		local word = select(1, ...)
+		if not word or word == "" then
+			print("Usage: :Rhymes find <word>")
+			return
+		end
+		picker.open(word)
+	elseif action == "analyze" then
+		local buf = vim.api.nvim_get_current_buf()
+		local res = analysis.analyze_poem(buf)
+		print(string.format("Lines: %d, Stanzas: %d", res.lines, res.stanzas))
+	else
+		print("Usage: :Rhymes find <word> | :Rhymes analyze")
+	end
+end
+
+return M
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/commands.lua
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/init.lua
+
+-- lua/rhymes/init.lua
+local M = {}
+
+--- Setup plugin configuration
+-- @param opts table: { services = { ... }, enable_analysis = bool }
+function M.setup(opts)
+	M.config = vim.tbl_extend("force", {
+		services = { "datamuse" },
+		enable_analysis = false,
+	}, opts or {})
+
+	-- future: if M.config.enable_analysis then register null-ls source end
+end
+
+return M
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/init.lua
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/picker.lua
+
+-- lua/rhymes/picker.lua
+local fzf = require("fzf-lua")
+local rhyme = require("rhymes.rhyme")
+
+local M = {}
+
+--- Open fzf-lua picker with rhymes for WORD
+-- Copies selected rhyme to the '+' register
+-- @param word string
+function M.open(word)
+	local list = rhyme.get_rhymes(word)
+	if #list == 0 then
+		vim.notify("No rhymes found for: " .. word, vim.log.levels.WARN)
+		return
+	end
+
+	fzf.fzf_exec(list, {
+		prompt = "Rhymes: ",
+		actions = {
+			["default"] = function(selected)
+				local w = selected[1]
+				vim.fn.setreg("+", w)
+				vim.notify("Copied rhyme: " .. w, vim.log.levels.INFO)
+			end,
+		},
+	})
+end
+
+return M
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/picker.lua
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/rhyme.lua
+
+-- lua/rhymes/rhyme.lua
+local M = {}
+
+-- service implementations using vim.fn.systemlist()
+local service_impl = {
+	datamuse = function(word)
+		local cmd = string.format('curl -s "https://api.datamuse.com/words?rel_rhy=%s"', vim.fn.shellescape(word))
+		local lines = vim.fn.systemlist(cmd)
+		local ok, json = pcall(vim.fn.json_decode, table.concat(lines, ""))
+		if not ok or type(json) ~= "table" then
+			return {}
+		end
+
+		local out = {}
+		for _, item in ipairs(json) do
+			if item.word then
+				table.insert(out, item.word)
+			end
+		end
+		return out
+	end,
+	-- future: add rhymebrain, AI providers here
+}
+
+--- Get rhymes for a word across configured services
+-- @param word string
+-- @return table list of rhyme words
+function M.get_rhymes(word)
+	local seen, results = {}, {}
+	for _, svc in ipairs(require("rhymes").config.services) do
+		local fn = service_impl[svc]
+		if fn then
+			for _, rhyme in ipairs(fn(word)) do
+				if not seen[rhyme] then
+					seen[rhyme] = true
+					table.insert(results, rhyme)
+				end
+			end
+		end
+	end
+	return results
+end
+
+return M
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE lua/rhymes/rhyme.lua
 
 AI_UPDATE
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE plugin/rhymes.vim
+
+-- plugin/rhymes.vim
+" Lazily load on :Rhymes
+if exists('g:loaded_rhymes') | finish | endif
+let g:loaded_rhymes = 1
+
+" Define single command with subcommands
+command! -nargs=* Rhymes lua require('rhymes.commands').run(<f-args>)
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE plugin/rhymes.vim
+
+AI_UPDATE
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE spec/analysis_spec.lua
+
+-- spec/analysis_spec.lua
+local analysis = require("rhymes.analysis")
+
+describe("analysis.analyze_poem", function()
+	it("counts lines and stanzas correctly", function()
+		vim.cmd("new")
+		vim.api.nvim_buf_set_lines(0, 0, -1, false, { "a", "", "b" })
+		local res = analysis.analyze_poem(0)
+		assert.equals(res.lines, 3)
+		assert.equals(res.stanzas, 2)
+		vim.cmd("bd!")
+	end)
+end)
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE spec/analysis_spec.lua
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE spec/rhyme_spec.lua
+
+-- spec/rhyme_spec.lua
+local rhyme = require("rhymes.rhyme")
+
+describe("rhyme.get_rhymes", function()
+	it("returns a table for a valid word", function()
+		local res = rhyme.get_rhymes("time")
+		assert.is_true(type(res) == "table")
+	end)
+end)
+
+
+-- >>>>>>>>>>>>>>>>>> BEGIN FILE spec/rhyme_spec.lua
 
 -- >>>>>>>>>>>>>>>>>> BEGIN FILE DEV.md
 
@@ -89,6 +317,20 @@ Neovim plugin which provides the functionality to find word rhymes.
 .
 ├── DEV.md
 ├── README.md
-└── ai-assistant.lua
+├── ai-assistant.lua
+├── doc
+│   └── rhymes.txt
+├── lua
+│   └── rhymes
+│       ├── analysis.lua
+│       ├── commands.lua
+│       ├── init.lua
+│       ├── picker.lua
+│       └── rhyme.lua
+├── plugin
+│   └── rhymes.vim
+└── spec
+    ├── analysis_spec.lua
+    └── rhyme_spec.lua
 
-1 directory, 3 files
+6 directories, 12 files

@@ -2,48 +2,85 @@
 
 ## Specifications
 
-Neovim plugin which provides the functionality to find word rhymes.
+Goal: Neovim plugin which can analyse a text in terms of poetry analysis
+and provide text tools to help writing poetry or lyrics.
+
+### Technical
 
 1. Nice integration into LazyVim (<https://github.com/LazyVim/LazyVim>)
-2. orientate yourself by looking at code from the top developer (for ex: <https://github.com/folke>, <https://github.com/tjdevries>),
-3. LSP integration: provide functions to analyze text in terms of a poem analysis (flow, structure, rhyme from, you get it)
-4. Picker (see snacks.nvim): Provide a picker for presenting rhymes for a word
-5. Use the best AI services which are available for free
-6. Lua only and with tests
+2. Generate documentation for Neovim (see LazyVim and lazy.nvim for inspiration).
+4. Picker (see snacks.nvim): when using pickers orientate on snacks.nvim (uses fzf-lua under the hood)
+5. Use the best AI services which are available for free and provide
+   configs for each service.
+6. Use busted tests only
+7. Do not use plenary or any other deprecated stuff. Think before or get
+   an overview of the current best practices
+8. Use `vim.fn.systemlist()` for HTTP requests
 
-## 1. Lazy-loading
+### Use Cases
 
-- Define a single `:Rhymes` user command
-  - Subcommands: `find <word>`, `analyze`
-- No startup overhead (load only on command)
+I have included the key aspects for poetry analysis. Each section has a
+sub section `Functionality` for implementing features
 
-## 2. Zero Plenary Dependency
+See: <https://www.masterclass.com/articles/how-to-analyze-poetry>
 
-- Use `vim.fn.systemlist()` for HTTP requests
-- Avoid `plenary.job` and any deprecated APIs
+#### Theme
 
-## 3. Rhyme Picker
+Poetry often conveys a message through figurative language. The central idea and the subject matter can reveal the underlying theme of a poem.
 
-- Integrate with **fzf-lua**
-- Display list of rhymes; copy selection to `"+` register
+- Extract the theme of a text using AI
 
-## 4. Configurable Rhyme Services
+#### Language
 
-- Default: **Datamuse API**
-- Easy extension point for additional providers (e.g., RhymeBrain, AI-based)
+1. Setting. The setting is the physical location of the story, and it can heavily inform a story’s mood. For instance, a story set during a sunny day will be predisposed to a happy or carefree mood, while a story set in a haunted house will be predisposed to a sense of tension or fear.
 
-## 5. Poem Analysis (Optional)
+2. Tone. Tone and mood can be easily mistaken for another, but they’re slightly different things. While mood has to do with the feelings evoked in the reader, tone has nothing to do with the reader and everything to do with the point-of-view character (either first person or third person) of the story. In short, tone is the narrator’s attitude toward the events taking place. Tone can contribute to the mood of a story by helping evoke feelings in readers—for instance, a rude narrator may create a funny tone for a story.
 
-- Stubbed in `analysis.lua`
-- Toggle via `enable_analysis` in `setup()`
-- Hook into **null-ls** for future LSP-based checks
+3. Word choice. The choice of words for a story can help establish its mood. If a writer wants to create a jarring or frustrating mood, they can choose specific words that are harsh and staccato-sounding; if they want to create a dark mood, they can use words with negative connotations to conjure brooding feelings.
 
-## 6. Tests with Busted
+4. Theme. Mood isn’t established only by the way a writer writes—it is also determined by the subject matter the author uses. For instance, a story that talks a lot about death may be trying to create a sad mood, while a story whose theme centers around birthdays may have a more positive and upbeat mood.
 
-- Place specs under `spec/`
-- Use pure **Busted** + LuaRocks (no plenary test harness)
+#### Functionality
 
-## 7. Documentation
+- provide a rhyme finder
+- filter rhymes by word choice or tone
+
+#### Sound and rhythm
+
+The syllabic patterns and stresses create the metrical pattern of a poem.
+
+#### Functionality
+
+- provide analyzer for syllables
+
+#### Structure
+
+The framework of a poem’s structure affects how it is meant to be read. A poet sculpts their story around stanzas, line breaks, rhyme patterns, punctuation, and pauses.
+
+#### Functionality
+
+- provide templates for Neovim: Must be discussed first
+
+#### Context
+
+The who, what, where, when, and why of a poem can help explain its purpose. Look at these elements to discover the context of a poem.
+
+#### Functionality
+
+- TODO
+
+## Coding Standards
+
+Orientate yourself by looking at code from the developers
+
+- <https://github.com/folke>
+- <https://github.com/tjdevries>>
+
+### Test
+
+Test files are in the folder spec. Use busted for testing.
+
+### Documentation
 
 - VimDoc file: `doc/rhymes.txt` (for `:help rhymes`)
 - Markdown `README.md` covering installation, config, and usage
