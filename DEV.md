@@ -81,6 +81,11 @@ Orientate yourself by looking at code from the developers
 ### Test
 
 Test files are in the folder spec. Use busted for testing.
+End to end test: To test the plugin from the user perspective use the
+file `spec/e2e_spec.lua`. E2E shares some code for providing the
+`checkhealth` provider.
+
+Health test: provide lua tests for Neovim `checkhealth` command
 
 ### Documentation
 
