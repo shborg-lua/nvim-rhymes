@@ -1,0 +1,11 @@
+" doc/rhymes.txt
+* rhymes.txt*    Plugin documentation for nvim-rhymes
+
+rhymes.txt      Rhyme finder and poem analyzer.
+
+USAGE:
+  :Rhymes find <word>
+  :Rhymes analyze
+
+CONFIGURATION:
+  call lua require('rhymes').setup({ enable_analysis = v:true })
